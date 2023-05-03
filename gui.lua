@@ -1,3 +1,5 @@
+-- Forked from https://github.com/xHeptc/Kavo-UI-Library/blob/main/source.lua
+
 local Kavo = {}
 
 local tween = game:GetService("TweenService")
