@@ -1,4 +1,4 @@
-function()
+test = function()
 	function shot0(weapon, enemy)
 		if weapon:GetAttribute("Ammo") ~= nil then
 			if Player:DistanceFromCharacter(enemy.Position) < weapon:GetAttribute("Range")*_G.Range then
