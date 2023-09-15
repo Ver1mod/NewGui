@@ -40,3 +40,4 @@ function test()
 		end)
 	end
 end
+test()
