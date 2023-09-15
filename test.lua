@@ -9,31 +9,34 @@ function shot0(weapon, enemy)
 		end
 	end
 end
-_G.autofarm = state
-while _G.autofarm do
-	wait()
-	pcall(function()
-		local enemy
-		local distance = 9216
 
-		local enemies = merge_tables(
-			NPCs.Monsters:GetChildren(), 
-			NPCs.Tango:GetChildren()
-		)
+function test()
+	_G.autofarm = state
+	while _G.autofarm do
+		wait()
+		pcall(function()
+			local enemy
+			local distance = 9216
 
-		for i,v in enemies do
-			if Player:DistanceFromCharacter(v.Head.Position) < distance then
-				enemy = v
-				distance = Player:DistanceFromCharacter(v.Head.Position)
+			local enemies = merge_tables(
+				NPCs.Monsters:GetChildren(), 
+				NPCs.Tango:GetChildren()
+			)
+
+			for i,v in enemies do
+				if Player:DistanceFromCharacter(v.Head.Position) < distance then
+					enemy = v
+					distance = Player:DistanceFromCharacter(v.Head.Position)
+				end
 			end
-		end
 
-		local v = enemy.Head
-		repeat task.wait()
-			auto_equip()
-			for _, tool in Player.Character:GetChildren() do
-				shot0(tool, v)
-			end
-		until v.Parent.Humanoid.Health == 0 or _G.autofarm == false
-	end)
+			local v = enemy.Head
+			repeat task.wait()
+				auto_equip()
+				for _, tool in Player.Character:GetChildren() do
+					shot0(tool, v)
+				end
+			until v.Parent.Humanoid.Health == 0 or _G.autofarm == false
+		end)
+	end
 end
