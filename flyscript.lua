@@ -122,12 +122,7 @@ local _Flight = (function()
 end)()
 
 example:AddToggle("Flight", function(state)
-	if fly_enabled == true then
-		_G.Flight = fly_enabled
-		fly_enabled = false
-	else
-		_G.Flight = state
-	end
+    _G.Flight = state
     if _G.Flight then
 		local enabled = true
         _Flight.flyStart(enabled)
