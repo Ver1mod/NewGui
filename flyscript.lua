@@ -122,12 +122,13 @@ local _Flight = (function()
 end)()
 
 example:AddToggle("Flight", function(state)
-	if fly_enabled ~= nil then
-		state = fly_enabled
+	if fly_enabled == true then
+		_G.Flight = fly_enabled
+	else
+		_G.Flight = state
 	end
-    _G.Flight = state
     if _G.Flight then
-	local enabled = true
+		local enabled = true
         _Flight.flyStart(enabled)
     else
         _Flight.flyend()
