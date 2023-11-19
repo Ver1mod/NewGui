@@ -124,6 +124,7 @@ end)()
 example:AddToggle("Flight", function(state)
 	if fly_enabled == true then
 		_G.Flight = fly_enabled
+		fly_enabled = false
 	else
 		_G.Flight = state
 	end
