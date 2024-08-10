@@ -3,6 +3,12 @@ test.__index = test
 
 local Player = game:GetService("Players").LocalPlayer
 
+if not game.CoreGui:FindFirstChild("NewUI") then
+	local NewUI = Instance.new("ScreenGui")
+	NewUI.Name = "NewUI"
+	NewUI.Parent = game.CoreGui
+end
+
 local function DragModule(Gui: Frame)
 	local Mouse: PlayerMouse = game:GetService("Players").LocalPlayer:GetMouse()
 	local UIS = game:GetService("UserInputService")
