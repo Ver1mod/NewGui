@@ -89,12 +89,19 @@ function test.new(TitleText: string)
 	local NewTest = setmetatable({}, test)
 	NewTest.MainUI = false
 	-- MainWindow
+	local Width: number = 0
+	for i,v: Frame in CoreGui.NewUI:GetChidlren() do
+		if v:IsA("Frame") then
+			Width += v.AbsoluteSize.X + 4
+		end
+	end
 	local MainWindow = Instance.new("Frame", CoreGui.NewUI)
 	NewTest.MainWindow = MainWindow
 	MainWindow.Name = TitleText
 	MainWindow.BackgroundTransparency = 1
 	MainWindow.BorderSizePixel = 0
 	MainWindow.Size = UDim2.new(0, 200, 0, 20)
+	MainWindow.Position = UDim2.new(0, Width, 0, 0)
 	DragModule(MainWindow)
 
 	-- Body
