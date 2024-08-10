@@ -1,442 +1,268 @@
-local library = {
-	windowcount = 0;
-}
+local test = {}
+test.__index = test
 
-local dragger = {};
-local resizer = {};
+local Player = game:GetService("Players").LocalPlayer
 
-do
-	local mouse = game:GetService("Players").LocalPlayer:GetMouse();
-	local inputService = game:GetService('UserInputService');
-	local heartbeat = game:GetService("RunService").Heartbeat;
-	-- // credits to Ririchi / Inori for this cute drag function :)
-	function dragger.new(frame)
-		local s, event = pcall(function()
-			return frame.MouseEnter
-		end)
-
-		if s then
-			frame.Active = true;
-
-			event:connect(function()
-				local input = frame.InputBegan:connect(function(key)
-					if key.UserInputType == Enum.UserInputType.MouseButton1 then
-						local objectPosition = Vector2.new(mouse.X - frame.AbsolutePosition.X, mouse.Y - frame.AbsolutePosition.Y);
-						while heartbeat:wait() and inputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-							frame:TweenPosition(UDim2.new(0, mouse.X - objectPosition.X + (frame.Size.X.Offset * frame.AnchorPoint.X), 0, mouse.Y - objectPosition.Y + (frame.Size.Y.Offset * frame.AnchorPoint.Y)), 'Out', 'Quad', 0.1, true);
-						end
-					end
-				end)
-
-				local leave;
-				leave = frame.MouseLeave:connect(function()
-					input:disconnect();
-					leave:disconnect();
-				end)
-			end)
-		end
-	end
-
-	function resizer.new(p, s)
-		p:GetPropertyChangedSignal('AbsoluteSize'):connect(function()
-			s.Size = UDim2.new(s.Size.X.Scale, s.Size.X.Offset, s.Size.Y.Scale, p.AbsoluteSize.Y);
-		end)
-	end
-end
-
-
-local defaults = {
-	txtcolor = Color3.fromRGB(255, 255, 255),
-	underline = Color3.fromRGB(0, 255, 140),
-	barcolor = Color3.fromRGB(24, 24, 24),
-	bgcolor = Color3.fromRGB(20, 20, 20),
-}
-
-function library:Create(class, props)
-	local object = Instance.new(class);
-
-	for i, prop in next, props do
-		if i ~= "Parent" then
-			object[i] = prop;
-		end
-	end
-
-	object.Parent = props.Parent;
-	return object;
-end
-
-function library:CreateWindow(options)
-	assert(options.text, "no name");
-	local window = {
-		count = 0;
-		toggles = {},
-		closed = false;
-	}
-
-	local options = options or {};
-	setmetatable(options, {__index = defaults})
-
-	self.windowcount = self.windowcount + 1;
-
-	library.gui = library.gui or self:Create("ScreenGui", {Name = "UILibrary", Parent = game:GetService("CoreGui")})
-	window.frame = self:Create("Frame", {
-		Name = options.text;
-		Parent = self.gui,
-		Active = true,
-		BackgroundTransparency = 0,
-		Size = UDim2.new(0, 190, 0, 30),
-		Position = UDim2.new(0, (15 + ((200 * self.windowcount) - 200)), 0, 15),
-		BackgroundColor3 = options.barcolor,
-		BorderSizePixel = 0;
-	})
-
-	window.background = self:Create('Frame', {
-		Name = 'Background';
-		Parent = window.frame,
-		BorderSizePixel = 0;
-		BackgroundTransparency = 0.05,
-		BackgroundColor3 = options.bgcolor,
-		Position = UDim2.new(0, 0, 1, 0),
-		Size = UDim2.new(1, 0, 0, 25),
-		ClipsDescendants = true;
-	})
-
-	window.container = self:Create('Frame', {
-		Name = 'Container';
-		Parent = window.frame,
-		BorderSizePixel = 0;
-		BackgroundTransparency = 1,
-		BackgroundColor3 = options.bgcolor,
-		Position = UDim2.new(0, 0, 1, 0),
-		Size = UDim2.new(1, 0, 0, 25),
-		ClipsDescendants = true;
-	})
-
-	window.organizer = self:Create('UIListLayout', {
-		Name = 'Sorter';
-		--Padding = UDim.new(0, 0);
-		SortOrder = Enum.SortOrder.LayoutOrder;
-		Parent = window.container;
-	})
-
-	window.padder = self:Create('UIPadding', {
-		Name = 'Padding';
-		PaddingLeft = UDim.new(0, 10);
-		PaddingTop = UDim.new(0, 5);
-		Parent = window.container;
-	})
-
-	self:Create("Frame", {
-		Name = 'Underline';
-		Size = UDim2.new(1, 0, 0, 1),
-		Position = UDim2.new(0, 0, 1, -1),
-		BorderSizePixel = 0;
-		BackgroundColor3 = options.underline;
-		Parent = window.frame
-	})
-
-	local togglebutton = self:Create("TextButton", {
-		Name = 'Toggle';
-		ZIndex = 2,
-		BackgroundTransparency = 1;
-		Position = UDim2.new(1, -25, 0, 0),
-		Size = UDim2.new(0, 25, 1, 0),
-		Text = "-",
-		TextSize = 17,
-		TextColor3 = options.txtcolor,
-		Font = Enum.Font.SourceSans;
-		Parent = window.frame,
-	});
-
-	togglebutton.MouseButton1Click:connect(function()
-		window.closed = not window.closed
-		togglebutton.Text = (window.closed and "+" or "-")
-		if window.closed then
-			window:Resize(true, UDim2.new(1, 0, 0, 0))
-		else
-			window:Resize(true)
+local function DragModule(Gui: Frame)
+	local Mouse: PlayerMouse = game:GetService("Players").LocalPlayer:GetMouse()
+	local UIS = game:GetService("UserInputService")
+	Gui.InputBegan:Connect(function(input: InputObject)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local Difference = Vector2.new(Mouse.X, Mouse.Y) - Gui.AbsolutePosition
+			while UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) and task.wait() do
+				local result = Vector2.new(Mouse.X, Mouse.Y) - Difference
+				Gui.Position = UDim2.new(0, result.X, 0, result.Y)
+			end
 		end
 	end)
-
-	self:Create("TextLabel", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1;
-		BorderSizePixel = 0;
-		TextColor3 = options.txtcolor,
-		TextColor3 = (options.bartextcolor or Color3.fromRGB(255, 255, 255));
-		TextSize = 17,
-		Font = Enum.Font.SourceSansSemibold;
-		Text = options.text or "window",
-		Name = "Window",
-		Parent = window.frame,
-	})
-
-	do
-		dragger.new(window.frame)
-		resizer.new(window.background, window.container);
-	end
-
-	local function getSize()
-		local ySize = 0;
-		for i, object in next, window.container:GetChildren() do
-			if (not object:IsA('UIListLayout')) and (not object:IsA('UIPadding')) then
-				ySize = ySize + object.AbsoluteSize.Y
-			end
-		end
-		return UDim2.new(1, 0, 0, ySize + 10)
-	end
-
-	function window:Resize(tween, change)
-		local size = change or getSize()
-		self.container.ClipsDescendants = true;
-
-		if tween then
-			self.background:TweenSize(size, "Out", "Sine", 0.5, true)
-		else
-			self.background.Size = size
-		end
-	end
-
-	function window:AddToggle(text, callback)
-		self.count = self.count + 1
-
-		callback = callback or function() end
-		local label = library:Create("TextLabel", {
-			Text =  text,
-			Size = UDim2.new(1, -10, 0, 20);
-			--Position = UDim2.new(0, 5, 0, ((20 * self.count) - 20) + 5),
-			BackgroundTransparency = 1;
-			TextColor3 = Color3.fromRGB(255, 255, 255);
-			TextXAlignment = Enum.TextXAlignment.Left;
-			LayoutOrder = self.Count;
-			TextSize = 16,
-			Font = Enum.Font.SourceSans,
-			Parent = self.container;
-		})
-
-		local button = library:Create("TextButton", {
-			Text = "OFF",
-			TextColor3 = Color3.fromRGB(255, 25, 25),
-			BackgroundTransparency = 1;
-			Position = UDim2.new(1, -25, 0, 0),
-			Size = UDim2.new(0, 25, 1, 0),
-			TextSize = 17,
-			Font = Enum.Font.SourceSansSemibold,
-			Parent = label;
-		})
-
-		button.MouseButton1Click:connect(function()
-			self.toggles[text] = (not self.toggles[text])
-			button.TextColor3 = (self.toggles[text] and Color3.fromRGB(0, 255, 140) or Color3.fromRGB(255, 25, 25))
-			button.Text =(self.toggles[text] and "ON" or "OFF")
-
-			callback(self.toggles[text])
-		end)
-
-		self:Resize()
-		return button
-	end
-
-	function window:AddBox(text, callback)
-		self.count = self.count + 1
-		callback = callback or function() end
-
-		local box = library:Create("TextBox", {
-			PlaceholderText = text,
-			Size = UDim2.new(1, -10, 0, 20);
-			--Position = UDim2.new(0, 5, 0, ((20 * self.count) - 20) + 5),
-			BackgroundTransparency = 0;
-			BackgroundColor3 = Color3.fromRGB(25, 25, 25),
-			TextColor3 = Color3.fromRGB(255, 255, 255);
-			TextXAlignment = Enum.TextXAlignment.Center;
-			TextSize = 16,
-			Text = "",
-			Font = Enum.Font.SourceSans,
-			LayoutOrder = self.Count;
-			BorderSizePixel = 0;
-			Parent = self.container;
-		})
-		box.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-		box.FocusLost:connect(function(...)
-			callback(box, ...)
-		end)
-
-		self:Resize()
-		return box
-	end
-
-	function window:AddButton(text, callback)
-		self.count = self.count + 1
-
-		callback = callback or function() end
-		local button: TextButton = library:Create("TextButton", {
-			Text =  text,
-			Size = UDim2.new(1, -10, 0, 20);
-			--Position = UDim2.new(0, 5, 0, ((20 * self.count) - 20) + 5),
-			BackgroundTransparency = 1;
-			TextColor3 = Color3.fromRGB(255, 255, 255);
-			TextXAlignment = Enum.TextXAlignment.Left;
-			TextSize = 16,
-			Font = Enum.Font.SourceSans,
-			LayoutOrder = self.Count;
-			Parent = self.container;
-		})
-		button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-		--local UICorner: UICorner = Instance.new("UICorner", button)
-		button.BorderColor3 = Color3.fromRGB(18, 18, 18) -- Color3.fromRGB(32, 32, 32)
-		button.BorderSizePixel = 0
-		button.AutoButtonColor = false
-		-- detect when cursor is above button and not
-		button.MouseEnter:connect(function()
-			button.BackgroundTransparency = 0
-		end)
-		button.MouseLeave:connect(function()
-			button.BackgroundTransparency = 1
-		end)
-		button.MouseButton1Click:connect(callback)
-		self:Resize()
-		return button
-	end
-
-	function window:AddLabel(text)
-		self.count = self.count + 1;
-
-		local tSize = game:GetService('TextService'):GetTextSize(text, 16, Enum.Font.SourceSans, Vector2.new(math.huge, math.huge))
-
-		local button = library:Create("TextLabel", {
-			Text =  text,
-			Size = UDim2.new(1, -10, 0, tSize.Y + 5);
-			TextScaled = false;
-			BackgroundTransparency = 1;
-			TextColor3 = Color3.fromRGB(255, 255, 255);
-			TextXAlignment = Enum.TextXAlignment.Left;
-			TextSize = 16,
-			Font = Enum.Font.SourceSans,
-			LayoutOrder = self.Count;
-			Parent = self.container;
-		})
-
-		self:Resize()
-		return button
-	end
-
-	function window:AddDropdown(options, callback)
-		self.count = self.count + 1
-		local default = options[1] or "";
-
-		callback = callback or function() end
-		local dropdown = library:Create("TextLabel", {
-			Size = UDim2.new(1, -10, 0, 20);
-			BackgroundTransparency = 0.75;
-			BackgroundColor3 = options.boxcolor,
-			TextColor3 = Color3.fromRGB(255, 255, 255);
-			TextXAlignment = Enum.TextXAlignment.Center;
-			TextSize = 16,
-			Text = default,
-			Font = Enum.Font.SourceSans,
-			BorderSizePixel = 0;
-			LayoutOrder = self.Count;
-			Parent = self.container;
-		})
-
-		local button = library:Create("ImageButton",{
-			BackgroundTransparency = 1;
-			Image = 'rbxassetid://3234893186';
-			Size = UDim2.new(0, 18, 1, 0);
-			Position = UDim2.new(1, -20, 0, 0);
-			Parent = dropdown;
-		})
-
-		local frame;
-
-		local function isInGui(frame)
-			local mloc = game:GetService('UserInputService'):GetMouseLocation();
-			local mouse = Vector2.new(mloc.X, mloc.Y - 36);
-
-			local x1, x2 = frame.AbsolutePosition.X, frame.AbsolutePosition.X + frame.AbsoluteSize.X;
-			local y1, y2 = frame.AbsolutePosition.Y, frame.AbsolutePosition.Y + frame.AbsoluteSize.Y;
-
-			return (mouse.X >= x1 and mouse.X <= x2) and (mouse.Y >= y1 and mouse.Y <= y2)
-		end
-
-		local function count(t)
-			local c = 0;
-			for i, v in next, t do
-				c = c + 1
-			end
-			return c;
-		end
-
-		button.MouseButton1Click:connect(function()
-			if count(options) == 0 then
-				return
-			end
-
-			if frame then
-				frame:Destroy();
-				frame = nil;
-			end
-
-			self.container.ClipsDescendants = false;
-
-			frame = library:Create('Frame', {
-				Position = UDim2.new(0, 0, 1, 0);
-				BackgroundColor3 = Color3.fromRGB(40, 40, 40);
-				Size = UDim2.new(0, dropdown.AbsoluteSize.X, 0, (count(options) * 21));
-				BorderSizePixel = 0;
-				Parent = dropdown;
-				ClipsDescendants = true;
-				ZIndex = 2;
-			})
-
-			library:Create('UIListLayout', {
-				Name = 'Layout';
-				Parent = frame;
-			})
-
-			for i, option in next, options do
-				local selection = library:Create('TextButton', {
-					Text = option;
-					BackgroundColor3 = Color3.fromRGB(40, 40, 40);
-					TextColor3 = Color3.fromRGB(255, 255, 255);
-					BorderSizePixel = 0;
-					TextSize = 16;
-					Font = Enum.Font.SourceSans;
-					Size = UDim2.new(1, 0, 0, 21);
-					Parent = frame;
-					ZIndex = 2;
-				})
-
-				selection.MouseButton1Click:connect(function()
-					dropdown.Text = option;
-					callback(option)
-					frame.Size = UDim2.new(1, 0, 0, 0);
-					game:GetService('Debris'):AddItem(frame, 0.1)
-				end)
-			end
-		end);
-
-		game:GetService('UserInputService').InputBegan:connect(function(m)
-			if m.UserInputType == Enum.UserInputType.MouseButton1 then
-				if frame and (not isInGui(frame)) then
-					game:GetService('Debris'):AddItem(frame);
-				end
-			end
-		end)
-
-		callback(default);
-		self:Resize()
-		return {
-			Refresh = function(self, array)
-				game:GetService('Debris'):AddItem(frame);
-				options = array
-				dropdown.Text = options[1];
-			end
-		}
-	end;
-
-
-	return window
 end
 
-return library
+test.Colors = {
+	MainColor = Color3.fromRGB(18, 18, 18),
+	FirstLayer = Color3.fromRGB(22, 22, 22),
+	ButtonColor = Color3.fromRGB(30,30,30),
+	TextBoxColor = Color3.fromRGB(27,27,27),
+	TextBoxBorder = Color3.fromRGB(38,38,38)
+}
+test.Lines = 0
+
+local GuiObject = {}
+GuiObject.__index = GuiObject
+function GuiObject.new(Object: Instance, Source)
+	local new = {}
+	setmetatable(new, GuiObject)
+	new.Instance = Object
+	new.Source = Source
+	return new
+end
+
+function GuiObject:ChangeOrder(Order: number)
+	self.Source:GetElement("order", Order, self.Source).LayoutOrder = self.Instance.LayoutOrder
+	self.Instance.LayoutOrder = Order
+end
+
+function GuiObject:Remove()
+	local Body: Frame = self.Source.MainWindow.Body -- self.MainWindow.Body
+	local Order = self.Instance.LayoutOrder
+	self.Instance:Destroy()
+	Body.Size -= UDim2.new(0,0,0,20)
+	self.Source.Lines -= 1
+	for _, v: TextButton in Body:GetChildren() do
+		if v:IsA("GuiObject") and v.LayoutOrder > Order then
+			v.LayoutOrder -= 1
+		end
+	end
+end
+
+function GuiObject:Timer(Timer: number, Callback): thread
+	if self.TimerThread and coroutine.status(self.TimerThread) then
+		coroutine.close(self.TimerThread)
+	end
+	self.TimerThread = coroutine.create(function()
+		local Time = 0
+		while Time < Timer do
+			Time += task.wait()
+		end
+		Callback()
+	end)
+	coroutine.resume(self.TimerThread)
+	return self.TimerThread
+end
+
+function test.Create(ClassName: string, Properties): Instance
+	local new = Instance.new(ClassName)
+	for i, v in Properties do
+		pcall(function()
+			new[i] = v
+		end)
+	end
+	return new
+end
+
+function test.new(TitleText: string)
+	local NewTest = setmetatable({}, test)
+	NewTest.MainUI = false
+	-- MainWindow
+	local MainWindow = Instance.new("Frame", Player.PlayerGui.NewUI)
+	NewTest.MainWindow = MainWindow
+	MainWindow.Name = TitleText
+	MainWindow.BackgroundTransparency = 1
+	MainWindow.BorderSizePixel = 0
+	MainWindow.Size = UDim2.new(0, 200, 0, 20)
+	DragModule(MainWindow)
+
+	-- Body
+	local Body = Instance.new("Frame", MainWindow)
+	Body.Name = "Body"
+	Body.BackgroundColor3 = NewTest.Colors.MainColor
+	Body.BorderSizePixel = 0
+	Body.Size = UDim2.new(1,0,0,0)
+	Body.Position = UDim2.new(0,0,0,20)
+
+	-- Title
+	local Title = Instance.new("TextLabel", MainWindow)
+	Title.Name = "Title"
+	Title.BackgroundColor3 = NewTest.Colors.MainColor
+	Title.Size = UDim2.new(0,200,0,20)
+	Title.BorderSizePixel = 0
+	Title.BackgroundTransparency = 0.2
+	Title.TextColor3 = Color3.fromRGB(255,255,255)
+	Title.Text = TitleText
+
+	-- TitleGrid
+	local TitleGrid = Instance.new("UIGridLayout", Title)
+	TitleGrid.CellSize = UDim2.new(0,20,0,20)
+	TitleGrid.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	TitleGrid.VerticalAlignment = Enum.VerticalAlignment.Center
+
+	-- Hide button
+	local HideButton = Instance.new("TextButton", Title)
+	HideButton.Name = "Hide"
+	HideButton.BackgroundTransparency = 1
+	HideButton.BorderSizePixel = 0
+	HideButton.Size = UDim2.new(0, 20, 0, 20)
+	HideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	HideButton.Text = "◉"
+
+	HideButton.MouseButton1Up:Connect(function()
+		Body.Visible = not Body.Visible
+		if Body.Visible then
+			HideButton.Text = "◉"
+		else
+			HideButton.Text = "●"
+		end
+	end)
+	
+	-- UIGridLayout
+	local Grid = Instance.new("UIGridLayout", Body)
+	Grid.CellPadding = UDim2.new(0,0,0,2)
+	Grid.CellSize = UDim2.new(1,0,0,20)
+	Grid.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	return NewTest
+end
+
+-- AddToggle
+function test:GetElement(Way2Get, Value, Source)
+	local Body = Source.MainWindow.Body
+	local Way2Get = string.lower(Way2Get)
+	if Way2Get == "name" then
+		for _, v:TextButton in Body:GetChildren() do
+			if string.lower(v.Text) == string.lower(Value) then
+				return v
+			end
+		end
+	elseif Way2Get == "order" then
+		for _, v:TextButton in Body:GetChildren() do
+			if v:IsA("GuiObject") and v.LayoutOrder == Value then
+				return v
+			end
+		end
+	end
+end
+function test:RemoveElement(v: TextButton)
+	local Body: Frame = self.MainWindow.Body -- self.MainWindow.Body
+	local Order = v.LayoutOrder
+	v:Destroy()
+	Body.Size -= UDim2.new(0,0,0,20)
+	self.Lines -= 2
+	for _, v: TextButton in Body:GetChildren() do
+		if v:IsA("GuiObject") and v.LayoutOrder > Order then
+			v.LayoutOrder -= 1
+		end
+	end
+end
+function test:AddToggle(Text: string, Callback)
+	local Body = self.MainWindow.Body
+	-- Toggle
+	local Toggle: TextButton = Instance.new("TextButton", Body)
+	Toggle.LayoutOrder = self.Lines
+	Toggle.BackgroundColor3 = self.Colors.ButtonColor
+	Toggle.BorderSizePixel = 0
+	Toggle.TextColor3 = Color3.fromRGB(255,255,255)
+	Toggle.Text = Text
+	-- Status
+	local Status: Frame = Instance.new("Frame", Toggle)
+	Status.Position = UDim2.new(0,180,0,0)
+	Status.Size = UDim2.new(0,20,0,20)
+	Status.BackgroundColor3 = Color3.fromRGB(255, 34, 45)
+	Status.BorderSizePixel = 0
+	-- Register toggle
+	self.Lines += 1
+	Body.Size += UDim2.new(0,0,0,20)
+
+	-- Connect button
+	local State = false
+	Toggle.MouseButton1Up:Connect(function()
+		State = not State
+		Callback(State)
+		if State then
+			Status.BackgroundColor3 = Color3.fromRGB(70, 255, 28)
+		else
+			Status.BackgroundColor3 = Color3.fromRGB(255, 34, 45)
+		end
+	end)
+	return GuiObject.new(Toggle, self)
+end
+function test:AddButton(Text:string, Callback)
+	local Body = self.MainWindow.Body
+	-- Toggle
+	local Button: TextButton = Instance.new("TextButton", Body)
+	Button.LayoutOrder = self.Lines
+	Button.BackgroundColor3 = self.Colors.ButtonColor
+	Button.BorderSizePixel = 0
+	Button.TextColor3 = Color3.fromRGB(255,255,255)
+	Button.Text = Text
+	-- Register button
+	self.Lines += 1
+	Body.Size += UDim2.new(0,0,0,20)
+
+	-- Connect button
+	Button.MouseButton1Up:Connect(function()
+		Callback()
+	end)
+	return GuiObject.new(Button, self)
+end
+
+function test:AddLabel(Text:string)
+	local Body = self.MainWindow.Body
+	-- Toggle
+	local Label: TextLabel = Instance.new("TextLabel", Body)
+	Label.LayoutOrder = self.Lines
+	Label.BackgroundColor3 = self.Colors.ButtonColor
+	Label.BorderSizePixel = 0
+	Label.TextColor3 = Color3.fromRGB(255,255,255)
+	Label.Text = Text
+	-- Register button
+	self.Lines += 1
+	Body.Size += UDim2.new(0,0,0,20)
+
+	return GuiObject.new(Label, self)
+end
+
+function test:AddBox(Text:string, Callback)
+	local Body = self.MainWindow.Body
+	-- Toggle
+	local Box: TextBox = Instance.new("TextBox", Body)
+	Box.LayoutOrder = self.Lines
+	Box.BackgroundColor3 = self.Colors.TextBoxColor
+	Box.BorderColor3 = self.Colors.TextBoxBorder
+	Box.BorderMode = Enum.BorderMode.Inset
+	Box.BorderSizePixel = 1
+	Box.TextColor3 = Color3.fromRGB(255,255,255)
+	Box.PlaceholderText = Text
+	Box.Text = ""
+	-- Register button
+	self.Lines += 1
+	Body.Size += UDim2.new(0,0,0,20)
+
+	Box.FocusLost:Connect(function(enterPressed)
+		if enterPressed then
+			Callback(Box.Text)
+			Box.PlaceholderText = string.format("%s | %s", Text, Box.Text)
+		end
+		Box.Text = ""
+	end)
+
+	return GuiObject.new(Box, self)
+end
+return test
