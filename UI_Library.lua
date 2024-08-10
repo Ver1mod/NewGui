@@ -200,12 +200,12 @@ function test:AddToggle(Text: string, Callback)
 	local State = false
 	Toggle.MouseButton1Up:Connect(function()
 		State = not State
-		Callback(State)
 		if State then
 			Status.BackgroundColor3 = Color3.fromRGB(70, 255, 28)
 		else
 			Status.BackgroundColor3 = Color3.fromRGB(255, 34, 45)
 		end
+		Callback(State)
 	end)
 	return GuiObject.new(Toggle, self)
 end
