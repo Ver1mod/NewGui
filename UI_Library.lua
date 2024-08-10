@@ -3,10 +3,10 @@ test.__index = test
 
 local Player = game:GetService("Players").LocalPlayer
 
+local CoreGui = game:GetService("CoreGui")
 if not game.CoreGui:FindFirstChild("NewUI") then
-	local NewUI = Instance.new("ScreenGui")
+	local NewUI = Instance.new("ScreenGui", CoreGui)
 	NewUI.Name = "NewUI"
-	NewUI.Parent = game.CoreGui
 end
 
 local function DragModule(Gui: Frame)
@@ -89,7 +89,7 @@ function test.new(TitleText: string)
 	local NewTest = setmetatable({}, test)
 	NewTest.MainUI = false
 	-- MainWindow
-	local MainWindow = Instance.new("Frame", Player.PlayerGui.NewUI)
+	local MainWindow = Instance.new("Frame", CoreGui.NewUI)
 	NewTest.MainWindow = MainWindow
 	MainWindow.Name = TitleText
 	MainWindow.BackgroundTransparency = 1
