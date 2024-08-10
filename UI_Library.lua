@@ -90,7 +90,7 @@ function test.new(TitleText: string)
 	NewTest.MainUI = false
 	-- MainWindow
 	local Width: number = 0
-	for i,v: Frame in CoreGui.NewUI:GetChidlren() do
+	for i,v: Frame in CoreGui.NewUI:GetChildren() do
 		if v:IsA("Frame") then
 			Width += v.AbsoluteSize.X + 4
 		end
