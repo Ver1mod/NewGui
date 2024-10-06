@@ -1,7 +1,25 @@
+type FunctionalGui = {
+	Instance: GuiObject,
+	Source: {},
+	new: (Object: Instance, Source: {[any]: any}) -> FunctionalGui,
+	Remove: (Source: {[any]: any}) -> nil,
+	Timer: (Timer: number, Callback) -> thread
+}
+
 local test = {}
 test.__index = test
 
 local Player = game:GetService("Players").LocalPlayer
+
+
+local CoreGui: PlayerGui = game:GetService("CoreGui")
+local NewUI: ScreenGui
+if not game.CoreGui:FindFirstChild("NewUI") then
+	NewUI = Instance.new("ScreenGui", CoreGui)
+	NewUI.Name = "NewUI"
+else
+	NewUI = CoreGui.NewUI
+end
 
 local function DragModule(Gui: Frame)
 	local Mouse: PlayerMouse = game:GetService("Players").LocalPlayer:GetMouse()
@@ -17,18 +35,27 @@ local function DragModule(Gui: Frame)
 	end)
 end
 
+test.ElementOrder = {
+	Button = 0,
+	Toggle = 1,
+	Label = 2,
+	Box = 3
+}
+test.ElementSize = UDim2.new(1, 0, 0, 20)
 test.Colors = {
-	MainColor = Color3.fromRGB(18, 18, 18),
-	FirstLayer = Color3.fromRGB(22, 22, 22),
-	ButtonColor = Color3.fromRGB(30,30,30),
-	TextBoxColor = Color3.fromRGB(27,27,27),
-	TextBoxBorder = Color3.fromRGB(38,38,38)
+	MainColor = Color3.fromRGB(14, 14, 14),
+	ButtonColor = Color3.fromRGB(80,80,80),
+	TextBoxColor = Color3.fromRGB(20,20,20),
+	TextBoxBorder = Color3.fromRGB(36,36,36),
+	LabelColor = Color3.fromRGB(24,24,24),
+	ElementTransparency = 1,
+	ElementHoverTransparency = 0
 }
 test.Lines = 0
 
 local GuiObject = {}
 GuiObject.__index = GuiObject
-function GuiObject.new(Object: Instance, Source)
+function GuiObject.new(Object: Instance, Source): FunctionalGui
 	local new = {}
 	setmetatable(new, GuiObject)
 	new.Instance = Object
@@ -83,12 +110,19 @@ function test.new(TitleText: string)
 	local NewTest = setmetatable({}, test)
 	NewTest.MainUI = false
 	-- MainWindow
-	local MainWindow = Instance.new("Frame", Player.PlayerGui.NewUI)
+	local Width: number = 0
+	for i,v: Frame in CoreGui.NewUI:GetChildren() do
+		if v:IsA("Frame") then
+			Width += v.AbsoluteSize.X + 4
+		end
+	end
+	local MainWindow = Instance.new("Frame", CoreGui.NewUI)
 	NewTest.MainWindow = MainWindow
 	MainWindow.Name = TitleText
 	MainWindow.BackgroundTransparency = 1
 	MainWindow.BorderSizePixel = 0
 	MainWindow.Size = UDim2.new(0, 200, 0, 20)
+	MainWindow.Position = UDim2.new(0, Width, 0, 0)
 	DragModule(MainWindow)
 
 	-- Body
@@ -98,6 +132,7 @@ function test.new(TitleText: string)
 	Body.BorderSizePixel = 0
 	Body.Size = UDim2.new(1,0,0,0)
 	Body.Position = UDim2.new(0,0,0,20)
+	Body.BackgroundTransparency = 0.2
 
 	-- Title
 	local Title = Instance.new("TextLabel", MainWindow)
@@ -114,6 +149,15 @@ function test.new(TitleText: string)
 	TitleGrid.CellSize = UDim2.new(0,20,0,20)
 	TitleGrid.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	TitleGrid.VerticalAlignment = Enum.VerticalAlignment.Center
+	TitleGrid.SortOrder = Enum.SortOrder.LayoutOrder
+	
+	-- UIListLayout
+	test.Create("UIListLayout", {
+		Parent = Body,
+		Padding = UDim.new(0, 1),
+		FillDirection = Enum.FillDirection.Vertical,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	})
 
 	-- Hide button
 	local HideButton = Instance.new("TextButton", Title)
@@ -133,11 +177,6 @@ function test.new(TitleText: string)
 		end
 	end)
 	
-	-- UIGridLayout
-	local Grid = Instance.new("UIGridLayout", Body)
-	Grid.CellPadding = UDim2.new(0,0,0,2)
-	Grid.CellSize = UDim2.new(1,0,0,20)
-	Grid.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	return NewTest
 end
 
@@ -174,14 +213,16 @@ end
 function test:AddToggle(Text: string, Callback)
 	local Body = self.MainWindow.Body
 	-- Toggle
-	local Toggle: TextButton = Instance.new("TextButton", Body)
-	Toggle.LayoutOrder = self.Lines
-	Toggle.BackgroundColor3 = self.Colors.ButtonColor
-	Toggle.BorderSizePixel = 0
-	Toggle.TextColor3 = Color3.fromRGB(255,255,255)
-	Toggle.Text = Text
+	local Element: TextButton = Instance.new("TextButton", Body)
+	Element.LayoutOrder = self.Lines
+	Element.BackgroundColor3 = self.Colors.ButtonColor
+	Element.BorderSizePixel = 0
+	Element.TextColor3 = Color3.fromRGB(255,255,255)
+	Element.Text = Text
+	Element.Size = self.ElementSize
+	Element.BackgroundTransparency = self.Colors.ElementTransparency
 	-- Status
-	local Status: Frame = Instance.new("Frame", Toggle)
+	local Status: Frame = Instance.new("Frame", Element)
 	Status.Position = UDim2.new(0,180,0,0)
 	Status.Size = UDim2.new(0,20,0,20)
 	Status.BackgroundColor3 = Color3.fromRGB(255, 34, 45)
@@ -191,78 +232,99 @@ function test:AddToggle(Text: string, Callback)
 	Body.Size += UDim2.new(0,0,0,20)
 
 	-- Connect button
+	Element.MouseEnter:Connect(function()
+		Element.BackgroundTransparency = self.Colors.ElementHoverTransparency
+	end)
+	Element.MouseLeave:Connect(function()
+		Element.BackgroundTransparency = self.Colors.ElementTransparency
+	end)
+	
 	local State = false
-	Toggle.MouseButton1Up:Connect(function()
+	Element.MouseButton1Up:Connect(function()
 		State = not State
-		Callback(State)
 		if State then
 			Status.BackgroundColor3 = Color3.fromRGB(70, 255, 28)
 		else
 			Status.BackgroundColor3 = Color3.fromRGB(255, 34, 45)
 		end
+		Callback(State)
 	end)
-	return GuiObject.new(Toggle, self)
+	return GuiObject.new(Element, self)
 end
 function test:AddButton(Text:string, Callback)
 	local Body = self.MainWindow.Body
 	-- Toggle
-	local Button: TextButton = Instance.new("TextButton", Body)
-	Button.LayoutOrder = self.Lines
-	Button.BackgroundColor3 = self.Colors.ButtonColor
-	Button.BorderSizePixel = 0
-	Button.TextColor3 = Color3.fromRGB(255,255,255)
-	Button.Text = Text
+	local Element: TextButton = Instance.new("TextButton", Body)
+	Element.LayoutOrder = self.Lines
+	Element.BackgroundColor3 = self.Colors.ButtonColor
+	Element.BorderSizePixel = 0
+	Element.TextColor3 = Color3.fromRGB(255,255,255)
+	Element.Text = Text
+	Element.Size = self.ElementSize
+	Element.BackgroundTransparency = self.Colors.ElementTransparency
+	Element.AutoButtonColor = false
+	
 	-- Register button
 	self.Lines += 1
 	Body.Size += UDim2.new(0,0,0,20)
 
 	-- Connect button
-	Button.MouseButton1Up:Connect(function()
+	Element.MouseEnter:Connect(function()
+		Element.BackgroundTransparency = self.Colors.ElementHoverTransparency
+	end)
+	Element.MouseLeave:Connect(function()
+		Element.BackgroundTransparency = self.Colors.ElementTransparency
+	end)
+	Element.MouseButton1Up:Connect(function()
 		Callback()
 	end)
-	return GuiObject.new(Button, self)
+	return GuiObject.new(Element, self)
 end
 
 function test:AddLabel(Text:string)
 	local Body = self.MainWindow.Body
 	-- Toggle
-	local Label: TextLabel = Instance.new("TextLabel", Body)
-	Label.LayoutOrder = self.Lines
-	Label.BackgroundColor3 = self.Colors.ButtonColor
-	Label.BorderSizePixel = 0
-	Label.TextColor3 = Color3.fromRGB(255,255,255)
-	Label.Text = Text
+	local Element: TextLabel = Instance.new("TextLabel", Body)
+	Element.LayoutOrder = self.Lines
+	Element.BackgroundColor3 = self.Colors.LabelColor
+	Element.BorderSizePixel = 0
+	Element.TextColor3 = Color3.fromRGB(255,255,255)
+	Element.Text = Text
+	Element.Size = self.ElementSize
+	Element.BackgroundTransparency = self.Colors.ElementTransparency
 	-- Register button
 	self.Lines += 1
 	Body.Size += UDim2.new(0,0,0,20)
 
-	return GuiObject.new(Label, self)
+	return GuiObject.new(Element, self)
 end
 
 function test:AddBox(Text:string, Callback)
 	local Body = self.MainWindow.Body
 	-- Toggle
-	local Box: TextBox = Instance.new("TextBox", Body)
-	Box.LayoutOrder = self.Lines
-	Box.BackgroundColor3 = self.Colors.TextBoxColor
-	Box.BorderColor3 = self.Colors.TextBoxBorder
-	Box.BorderMode = Enum.BorderMode.Inset
-	Box.BorderSizePixel = 1
-	Box.TextColor3 = Color3.fromRGB(255,255,255)
-	Box.PlaceholderText = Text
-	Box.Text = ""
+	local Element: TextBox = Instance.new("TextBox", Body)
+	Element.LayoutOrder = self.Lines
+	Element.BackgroundColor3 = self.Colors.TextBoxColor
+	Element.BorderColor3 = self.Colors.TextBoxBorder
+	Element.BorderMode = Enum.BorderMode.Inset
+	Element.BorderSizePixel = 1
+	Element.TextColor3 = Color3.fromRGB(255,255,255)
+	Element.PlaceholderText = Text
+	Element.Text = ""
+	Element.Size = self.ElementSize
+	Element.BackgroundTransparency = self.Colors.ElementTransparency
 	-- Register button
 	self.Lines += 1
 	Body.Size += UDim2.new(0,0,0,20)
 
-	Box.FocusLost:Connect(function(enterPressed)
+	Element.FocusLost:Connect(function(enterPressed)
 		if enterPressed then
-			Callback(Box.Text)
-			Box.PlaceholderText = string.format("%s | %s", Text, Box.Text)
+			Callback(Element.Text)
+			Element.PlaceholderText = string.format("%s | %s", Text, Element.Text)
 		end
-		Box.Text = ""
+		Element.Text = ""
 	end)
 
-	return GuiObject.new(Box, self)
+	return GuiObject.new(Element, self)
 end
 return test
