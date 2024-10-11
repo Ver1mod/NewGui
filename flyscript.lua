@@ -129,16 +129,10 @@ example:AddToggle("Flight", function(state)
 	end
 end)
 
-example:AddBox("Speed", function(object, focus)
-	_Flight.Options["Speed"] = 5
-	pcall(function()
-		_Flight.Options["Speed"] = tonumber(object.Text)
-	end)
+example:AddBox("Speed", function(Text)
+	_Flight.Options["Speed"] = tonumber(Text)
 end)
 
-example:AddBox("Smoothness", function(object, focus)
-	_Flight.Options["Smoothness"] = 0.2
-	pcall(function()
-		_Flight.Options["Smoothness"] = tonumber(object.Text)
-	end)
+example:AddBox("Smoothness", function(Text)
+	_Flight.Options["Smoothness"] = tonumber(Text)
 end)
