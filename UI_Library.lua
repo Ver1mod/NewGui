@@ -1,28 +1,7 @@
-type FunctionalGui = {
-	Instance: GuiObject,
-	Source: {},
-	new: (Object: Instance, Source: {[any]: any}) -> FunctionalGui,
-	Remove: (Source: {[any]: any}) -> nil,
-	Timer: (Timer: number, Callback) -> thread
-}
-
---type rgba = {
---	Red: number,
---	Green: number,
---	Blue: number,
---	Alpha: number
---}
-
---local function rgba(r: number, g: number, b: number, a: number): rgba
---	local color = Color3.fromRGB(r, b, g)
---	return {color.R, color.B, color.G, a}
---end
-
 local test = {}
 test.__index = test
 
 local Player = game:GetService("Players").LocalPlayer
-
 
 local CoreGui: PlayerGui = game:GetService("CoreGui")
 local NewUI: ScreenGui
@@ -31,20 +10,6 @@ if not game.CoreGui:FindFirstChild("NewUI") then
 	NewUI.Name = "NewUI"
 else
 	NewUI = CoreGui.NewUI
-end
-
-local function DragModule(Gui: Frame)
-	local Mouse: PlayerMouse = game:GetService("Players").LocalPlayer:GetMouse()
-	local UIS = game:GetService("UserInputService")
-	Gui.InputBegan:Connect(function(input: InputObject)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			local Difference = Vector2.new(Mouse.X, Mouse.Y) - Gui.AbsolutePosition
-			while UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) and task.wait() do
-				local result = Vector2.new(Mouse.X, Mouse.Y) - Difference
-				Gui.Position = UDim2.new(0, result.X, 0, result.Y)
-			end
-		end
-	end)
 end
 
 test.ElementOrder = {
@@ -67,7 +32,7 @@ test.Lines = 0
 
 local GuiObject = {}
 GuiObject.__index = GuiObject
-function GuiObject.new(Object: Instance, Source): FunctionalGui
+function GuiObject.new(Object: Instance, Source)
 	local new = {}
 	setmetatable(new, GuiObject)
 	new.Instance = Object
@@ -98,9 +63,9 @@ function GuiObject:Timer(Timer: number, Callback): thread
 		coroutine.close(self.TimerThread)
 	end
 	self.TimerThread = coroutine.create(function()
-		local Time = 0
-		while Time < Timer do
-			Time += task.wait()
+		local Timer = Timer
+		while Timer > 0 do
+			Timer -= task.wait()
 		end
 		Callback()
 	end)
@@ -111,9 +76,7 @@ end
 function test.Create(ClassName: string, Properties): Instance
 	local new = Instance.new(ClassName)
 	for i, v in Properties do
-		pcall(function()
-			new[i] = v
-		end)
+		new[i] = v
 	end
 	return new
 end
@@ -128,40 +91,63 @@ function test.new(TitleText: string)
 			Width += v.AbsoluteSize.X + 4
 		end
 	end
-	local MainWindow = Instance.new("Frame", CoreGui.NewUI)
-	NewTest.MainWindow = MainWindow
-	MainWindow.Name = TitleText
-	MainWindow.BackgroundTransparency = 1
-	MainWindow.BorderSizePixel = 0
-	MainWindow.Size = UDim2.new(0, 200, 0, 20)
-	MainWindow.Position = UDim2.new(0, Width, 0, 0)
-	DragModule(MainWindow)
-
+	
+	NewTest.MainWindow = test.Create("Frame", {
+		Parent = CoreGui.NewUI,
+		Name = TitleText,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = UDim2.new(0, 200, 0, 20),
+		Position = UDim2.new(0, Width, 0, 0)
+	})
+	
+	local function DragModule(Gui: Frame)
+		local Mouse: PlayerMouse = game:GetService("Players").LocalPlayer:GetMouse()
+		local UIS = game:GetService("UserInputService")
+		Gui.InputBegan:Connect(function(input: InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				local Difference = Vector2.new(Mouse.X, Mouse.Y) - Gui.AbsolutePosition
+				while UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) and task.wait() do
+					local result = Vector2.new(Mouse.X, Mouse.Y) - Difference
+					Gui.Position = UDim2.new(0, result.X, 0, result.Y)
+				end
+			end
+		end)
+	end
+	
+	DragModule(NewTest.MainWindow)
+	
 	-- Body
-	local Body = Instance.new("Frame", MainWindow)
-	Body.Name = "Body"
-	Body.BackgroundColor3 = NewTest.Colors.MainColor
-	Body.BorderSizePixel = 0
-	Body.Size = UDim2.new(1,0,0,0)
-	Body.Position = UDim2.new(0,0,0,20)
-	Body.BackgroundTransparency = 0.2
-
+	local Body: Frame = test.Create("Frame", {
+		Parent = NewTest.MainWindow,
+		Name = "Body",
+		BackgroundColor3 = NewTest.Colors.MainColor,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1,0,0,0),
+		Position = UDim2.new(0,0,0,20),
+		BackgroundTransparency = 0.2
+	})
+	
 	-- Title
-	local Title = Instance.new("TextLabel", MainWindow)
-	Title.Name = "Title"
-	Title.BackgroundColor3 = NewTest.Colors.MainColor
-	Title.Size = UDim2.new(0,200,0,20)
-	Title.BorderSizePixel = 0
-	Title.BackgroundTransparency = 0.2
-	Title.TextColor3 = Color3.fromRGB(255,255,255)
-	Title.Text = TitleText
-
+	local Title: TextLabel = test.Create("TextLabel", {
+		Parent = NewTest.MainWindow,
+		Name = "Title",
+		BackgroundColor3 = NewTest.Colors.MainColor,
+		Size = UDim2.new(0,200,0,20),
+		BorderSizePixel = 0,
+		BackgroundTransparency = 0.2,
+		TextColor3 = Color3.fromRGB(255,255,255),
+		Text = TitleText
+	})
+	
 	-- TitleGrid
-	local TitleGrid = Instance.new("UIGridLayout", Title)
-	TitleGrid.CellSize = UDim2.new(0,20,0,20)
-	TitleGrid.HorizontalAlignment = Enum.HorizontalAlignment.Right
-	TitleGrid.VerticalAlignment = Enum.VerticalAlignment.Center
-	TitleGrid.SortOrder = Enum.SortOrder.LayoutOrder
+	test.Create("UIGridLayout", {
+		Parent = Title,
+		CellSize = UDim2.new(0,20,0,20),
+		HorizontalAlignment = Enum.HorizontalAlignment.Right,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
 	
 	-- UIListLayout
 	test.Create("UIListLayout", {
@@ -170,22 +156,24 @@ function test.new(TitleText: string)
 		FillDirection = Enum.FillDirection.Vertical,
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	})
-
+	
 	-- Hide button
-	local HideButton = Instance.new("TextButton", Title)
-	HideButton.Name = "Hide"
-	HideButton.BackgroundTransparency = 1
-	HideButton.BorderSizePixel = 0
-	HideButton.Size = UDim2.new(0, 20, 0, 20)
-	HideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	HideButton.Text = "◉"
-
+	local HideButton = test.Create("TextButton", {
+		Parent = Title,
+		Name = "Hide",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = UDim2.new(0, 20, 0, 20),
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		Text = "-"
+	})
+	
 	HideButton.MouseButton1Up:Connect(function()
 		Body.Visible = not Body.Visible
 		if Body.Visible then
-			HideButton.Text = "◉"
+			HideButton.Text = "-"
 		else
-			HideButton.Text = "●"
+			HideButton.Text = "+"
 		end
 	end)
 	
