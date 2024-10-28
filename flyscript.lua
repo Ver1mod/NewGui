@@ -1,138 +1,169 @@
+local Player = game:GetService("Players").LocalPlayer
+
+-- Services
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Ver1mod/NewGui/main/UI_Library.lua", true))()
-local example = library.new("Test")
+local example = library.new("FlyScript")
 
-local _Flight = (function()
-	--// Variables
-	local RunService = game:GetService("RunService")
-	local UserInputService = game:GetService("UserInputService")
-	local Players = game:GetService("Players")
-	local Player = Players.LocalPlayer
-	local character = Player.Character
-	local camera = workspace.CurrentCamera
+local Main = {Status = false, Connections = {}}
+_G.MainFly = Main
+Main.__index = Main
 
-	local module = {}
-	module.Options = {
-		Speed = 5,
-		Smoothness = 0.2,
-	}
+Main.Config = {
+	Speed = 1,
+	ToCameraSpace = true,
+	Higher = Enum.KeyCode.E,
+	Lower = Enum.KeyCode.Q
+}
 
-	local lib, connections = {}, {}
-	lib.connect = function(name, connection)
-		connections[name .. tostring(math.random(1000000, 9999999))] = connection
-		return connection
-	end
-	lib.disconnect = function(name)
-		for title, connection in pairs(connections) do
-			if title:find(name) == 1 then
-				connection:Disconnect()
-			end
+function Main:EnableFly()
+	local flyPart: Part?
+	flyPart = flyPart or game.Players.LocalPlayer.Character:GetPivot()
+	
+	local dir = {w = false, a = false, s = false, d = false, q = false, e = false}
+
+	local function GetDirection()
+		local x, y, z = 0, 0, 0
+		local Speed = self.Config.Speed
+		if dir.w then z += -1 * Speed end
+		if dir.a then x += -1 * Speed end
+		if dir.s then z += 1 * Speed end
+		if dir.d then x += 1 * Speed end
+		if dir.e then y += 1 * Speed end
+		if dir.q then y += -1 * Speed end
+
+		if x ~= 0 and z ~= 0 then
+			x /= 2
+			z /= 2
 		end
+		return CFrame.new(x,y,z)
 	end
+	local Direction = CFrame.new()
 
-	--// Functions
-	local flyPart
-
-	module.flyend = function()
-		lib.disconnect("fly")
-		if flyPart then
-			flyPart:Destroy()
+	self.Connections["InputBegan"] = UserInputService.InputBegan:Connect(function(input, event)
+		if event then return end
+		local code, codes = input.KeyCode, Enum.KeyCode
+		if code == codes.W then
+			dir.w = true
+		elseif code == codes.A then
+			dir.a = true
+		elseif code == codes.S then
+			dir.s = true
+		elseif code == codes.D then
+			dir.d = true
+		elseif code == self.Config.Lower then
+			dir.q = true
+		elseif code == self.Config.Higher then
+			dir.e = true
 		end
-		character:FindFirstChildWhichIsA("Humanoid").PlatformStand = false
-	end
-
-	module.flyStart = function(enabled)
-		if not enabled then flyEnd() return end
-		local dir = {w = false, a = false, s = false, d = false}
-		local cf = Instance.new("CFrameValue")
-
-		flyPart = flyPart or Instance.new("Part")
-		flyPart.Anchored = true
-		pcall(function()
-			flyPart.CFrame = character.HumanoidRootPart.CFrame
-		end)
-
-		lib.connect("fly", RunService.Heartbeat:Connect(function()
-			if not character or not character.Parent or not character:FindFirstChild("HumanoidRootPart") then return end
-
-			local primaryPart = character.HumanoidRootPart
-			local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-			local speed = module.Options.Speed
-
-			local x, y, z = 0, 0, 0
-			if dir.w then z = -1 * speed end
-			if dir.a then x = -1 * speed end
-			if dir.s then z = 1 * speed end
-			if dir.d then x = 1 * speed end
-			if dir.q then y = 1 * speed end
-			if dir.e then y = -1 * speed end
-
-			flyPart.CFrame = CFrame.new(
-				flyPart.CFrame.p,
-				(camera.CFrame * CFrame.new(0, 0, -2048)).p
-			)
-
-			for _, part in pairs(character:GetChildren()) do
-				if part:IsA("BasePart") then
-					part.Velocity = Vector3.new()
-				end
-			end
-
-			local moveDir = CFrame.new(x,y,z)
-			cf.Value = cf.Value:lerp(moveDir, module.Options.Smoothness)
-			flyPart.CFrame = flyPart.CFrame:lerp(flyPart.CFrame * cf.Value, module.Options.Smoothness)
-			primaryPart.CFrame = flyPart.CFrame
-			humanoid.PlatformStand = true
-		end))
-		lib.connect("fly", UserInputService.InputBegan:Connect(function(input, event)
-			if event then return end
-			local code, codes = input.KeyCode, Enum.KeyCode
-			if code == codes.W then
-				dir.w = true
-			elseif code == codes.A then
-				dir.a = true
-			elseif code == codes.S then
-				dir.s = true
-			elseif code == codes.D then
-				dir.d = true
-			end
-		end))
-		lib.connect("fly", UserInputService.InputEnded:Connect(function(input, event)
-			if event then return end
-			local code, codes = input.KeyCode, Enum.KeyCode
-			if code == codes.W then
-				dir.w = false
-			elseif code == codes.A then
-				dir.a = false
-			elseif code == codes.S then
-				dir.s = false
-			elseif code == codes.D then
-				dir.d = false
-			end
-		end))
-	end
-
-	--// Events
-	Player.CharacterAdded:Connect(function(char)
-		character = char
+		Direction = GetDirection()
 	end)
 
-	return module
-end)()
+	self.Connections["InputEnded"] = UserInputService.InputEnded:Connect(function(input, event)
+		if event then return end
+		local code, codes = input.KeyCode, Enum.KeyCode
+		if code == codes.W then
+			dir.w = false
+		elseif code == codes.A then
+			dir.a = false
+		elseif code == codes.S then
+			dir.s = false
+		elseif code == codes.D then
+			dir.d = false
+		elseif code == self.Config.Lower then
+			dir.q = false
+		elseif code == self.Config.Higher then
+			dir.e = false
+		end
+		Direction = GetDirection()
+	end)
+	
+	self.Connections["Move"] = RunService.Heartbeat:Connect(function()
+		Player.Character.Humanoid.PlatformStand = true
+		if self.Config.ToCameraSpace then
+			local CameraP = (workspace.CurrentCamera.CFrame * CFrame.new(0, 0, -2048)).Position
+			flyPart = CFrame.new(
+				flyPart.Position,
+				Vector3.new(CameraP.X, flyPart.Y, CameraP.Z)
+			)
+		else
+			flyPart = CFrame.new(
+				flyPart.Position,
+				(workspace.CurrentCamera.CFrame * CFrame.new(0, 0, -2048)).Position
+			)
+		end
+		
+		flyPart = flyPart*Direction
+		Player.Character:PivotTo(flyPart)
+	end)
+end
 
-example:AddToggle("Flight", function(state)
-	_G.Flight = state
-	if _G.Flight then
-		local enabled = true
-		_Flight.flyStart(enabled)
+function Main:DisableFly()
+	self.Connections["Move"]:Disconnect()
+	self.Connections["Move"] = nil
+	
+	self.Connections["InputBegan"]:Disconnect()
+	self.Connections["InputBegan"] = nil
+	
+	self.Connections["InputEnded"]:Disconnect()
+	self.Connections["InputEnded"] = nil
+	
+	Player.Character.Humanoid.PlatformStand = false
+end
+
+local Toggle = example:AddToggle("Fly", function(State: boolean)
+	if State then
+		Main:EnableFly()
 	else
-		_Flight.flyend()
+		Main:DisableFly()
 	end
 end)
 
-example:AddBox("Speed", function(Text)
-	_Flight.Options["Speed"] = tonumber(Text)
+example:AddBox("Speed", function(Speed: string)
+	Main.Config.Speed = tostring(Speed)
 end)
 
-example:AddBox("Smoothness", function(Text)
-	_Flight.Options["Smoothness"] = tonumber(Text)
+local Box = example:AddBox("ToCameraSpace", function(State: string)
+	Main.Config.ToCameraSpace = State == "true"
+end)
+
+example:AddBox("Key", function(Key: string)
+	local ContextActionService = game:GetService("ContextActionService")
+	local function handleAction(actionName, inputState, inputObject)
+		if actionName == "FlyScript" then
+			if inputState == Enum.UserInputState.Begin then
+				if Toggle.State then
+					Main:DisableFly()
+					Toggle:ChangeState(false)
+				else
+					Main:EnableFly()
+					Toggle:ChangeState(true)
+				end
+			end
+		end
+	end
+	ContextActionService:BindAction("FlyScript", handleAction, false, Enum.KeyCode[string.upper(Key)])
+end)
+
+example:AddBox("Key0", function(Key: string)
+	local ContextActionService = game:GetService("ContextActionService")
+	local function handleAction(actionName, inputState, inputObject)
+		if actionName == "ToCameraSpace" then
+			if inputState == Enum.UserInputState.Begin then
+				Main.Config.ToCameraSpace = not Main.Config.ToCameraSpace
+				Box.Instance.PlaceholderText = string.format("%s | %*", "ToCameraSpace", Main.Config.ToCameraSpace)
+			end
+		end
+	end
+	ContextActionService:BindAction("ToCameraSpace", handleAction, false, Enum.KeyCode[string.upper(Key)])
+end)
+
+example:AddBox("Higher", function(Key: string)
+	Main.Config.Higher = Enum.KeyCode[string.upper(Key)]
+end)
+
+example:AddBox("Lower", function(Key: string)
+	Main.Config.Lower = Enum.KeyCode[string.upper(Key)]
 end)
