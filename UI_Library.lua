@@ -73,6 +73,24 @@ function GuiObject:Timer(Timer: number, Callback): thread
 	return self.TimerThread
 end
 
+local ToggleObject = setmetatable({}, GuiObject)
+ToggleObject.__index = ToggleObject
+function ToggleObject.new(Object: Instance, Source)
+	local new = setmetatable(GuiObject.new(Object, Source), ToggleObject)
+	new.State = false
+	return new
+end
+
+function ToggleObject:ChangeState(State: boolean)
+	self.State = State
+	local Status: Frame = self.Instance:FindFirstChildWhichIsA("Frame")
+	if State then
+		Status.BackgroundColor3 = Color3.fromRGB(70, 255, 28)
+	else
+		Status.BackgroundColor3 = Color3.fromRGB(255, 34, 45)
+	end
+end
+
 function test.Create(ClassName: string, Properties): Instance
 	local new = Instance.new(ClassName)
 	for i, v in Properties do
@@ -245,16 +263,13 @@ function test:AddToggle(Text: string, Callback)
 	end)
 	
 	local State = false
+	local ToggleObject = ToggleObject.new(Element, self)
+	ToggleObject.State = false
 	Element.MouseButton1Up:Connect(function()
-		State = not State
-		if State then
-			Status.BackgroundColor3 = Color3.fromRGB(70, 255, 28)
-		else
-			Status.BackgroundColor3 = Color3.fromRGB(255, 34, 45)
-		end
-		Callback(State)
+		ToggleObject:ChangeState(not ToggleObject.State)
+		Callback(ToggleObject.State)
 	end)
-	return GuiObject.new(Element, self)
+	return ToggleObject
 end
 function test:AddButton(Text:string, Callback)
 	local Body = self.MainWindow.Body
