@@ -19,11 +19,11 @@ Main.Config = {
 }
 
 function Main:EnableFly()
-	local flyPart: Part?
-	flyPart = flyPart or game.Players.LocalPlayer.Character:GetPivot()
+	local FlyC: CFrame
+	FlyC = FlyC or game.Players.LocalPlayer.Character:GetPivot()
 	
 	local dir = {w = false, a = false, s = false, d = false, q = false, e = false}
-
+	
 	local function GetDirection()
 		local x, y, z = 0, 0, 0
 		local Speed = self.Config.Speed
@@ -79,37 +79,37 @@ function Main:EnableFly()
 		end
 		Direction = GetDirection()
 	end)
-	
+
 	self.Connections["Move"] = RunService.Heartbeat:Connect(function()
 		Player.Character.Humanoid.PlatformStand = true
 		if self.Config.ToCameraSpace then
 			local CameraP = (workspace.CurrentCamera.CFrame * CFrame.new(0, 0, -2048)).Position
-			flyPart = CFrame.new(
-				flyPart.Position,
-				Vector3.new(CameraP.X, flyPart.Y, CameraP.Z)
+			FlyC = CFrame.new(
+				FlyC.Position,
+				Vector3.new(CameraP.X, FlyC.Y, CameraP.Z)
 			)
 		else
-			flyPart = CFrame.new(
-				flyPart.Position,
+			FlyC = CFrame.new(
+				FlyC.Position,
 				(workspace.CurrentCamera.CFrame * CFrame.new(0, 0, -2048)).Position
 			)
 		end
-		
-		flyPart = flyPart*Direction
-		Player.Character:PivotTo(flyPart)
+
+		FlyC = FlyC*Direction
+		Player.Character:PivotTo(FlyC)
 	end)
 end
 
 function Main:DisableFly()
 	self.Connections["Move"]:Disconnect()
 	self.Connections["Move"] = nil
-	
+
 	self.Connections["InputBegan"]:Disconnect()
 	self.Connections["InputBegan"] = nil
-	
+
 	self.Connections["InputEnded"]:Disconnect()
 	self.Connections["InputEnded"] = nil
-	
+
 	Player.Character.Humanoid.PlatformStand = false
 end
 
