@@ -13,7 +13,7 @@ Main.__index = Main
 
 Main.Config = {
 	Speed = 1,
-	ToCameraSpace = true,
+	LimitYRotation = true,
 	Higher = Enum.KeyCode.E,
 	Lower = Enum.KeyCode.Q
 }
@@ -79,12 +79,16 @@ function Main:EnableFly()
 		end
 		Direction = GetDirection()
 	end)
-
+	
 	self.Connections["Move"] = RunService.Heartbeat:Connect(function()
+		for _, part in pairs(Player.Character:GetChildren()) do
+			if part:IsA("BasePart") then
+				part.AssemblyLinearVelocity = Vector3.new()
+			end
+		end
 		Player.Character.Humanoid.PlatformStand = true
-		self.OldAnchored = Player.Character.PrimaryPart.Anchored
-		Player.Character.PrimaryPart.Anchored = true
-		if self.Config.ToCameraSpace then
+		
+		if self.Config.LimitYRotation then
 			local CameraP = (workspace.CurrentCamera.CFrame * CFrame.new(0, 0, -2048)).Position
 			FlyC = CFrame.new(
 				FlyC.Position,
@@ -112,8 +116,14 @@ function Main:DisableFly()
 	self.Connections["InputEnded"]:Disconnect()
 	self.Connections["InputEnded"] = nil
 
+	self.Connections["CharacterRemoving"]:Disconnect()
+	self.Connections["CharacterRemoving"] = nil
+
 	Player.Character.Humanoid.PlatformStand = false
-	Player.Character.PrimaryPart.Anchored = self.OldAnchored
+
+	if self.OldAnchored ~= nil then
+		Player.Character.PrimaryPart.Anchored = self.OldAnchored
+	end
 end
 
 local Toggle = example:AddToggle("Fly", function(State: boolean)
@@ -128,8 +138,8 @@ example:AddBox("Speed", function(Speed: string)
 	Main.Config.Speed = tostring(Speed)
 end)
 
-local Box = example:AddBox("ToCameraSpace", function(State: string)
-	Main.Config.ToCameraSpace = State == "true"
+local Box = example:AddBox("Limit Y rotation", function(State: string)
+	Main.Config.LimitYRotation = State == "true"
 end)
 
 example:AddBox("Key", function(Key: string)
@@ -153,14 +163,14 @@ end)
 example:AddBox("Key0", function(Key: string)
 	local ContextActionService = game:GetService("ContextActionService")
 	local function handleAction(actionName, inputState, inputObject)
-		if actionName == "ToCameraSpace" then
+		if actionName == "LimitYRotation" then
 			if inputState == Enum.UserInputState.Begin then
-				Main.Config.ToCameraSpace = not Main.Config.ToCameraSpace
-				Box.Instance.PlaceholderText = string.format("%s | %*", "ToCameraSpace", Main.Config.ToCameraSpace)
+				Main.Config.LimitYRotation = not Main.Config.LimitYRotation
+				Box.Instance.PlaceholderText = string.format("%s | %*", "Limit Y rotation", Main.Config.LimitYRotation)
 			end
 		end
 	end
-	ContextActionService:BindAction("ToCameraSpace", handleAction, false, Enum.KeyCode[string.upper(Key)])
+	ContextActionService:BindAction("LimitYRotation", handleAction, false, Enum.KeyCode[string.upper(Key)])
 end)
 
 example:AddBox("Higher", function(Key: string)
