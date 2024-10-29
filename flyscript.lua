@@ -21,9 +21,9 @@ Main.Config = {
 function Main:EnableFly()
 	local FlyC: CFrame
 	FlyC = FlyC or game.Players.LocalPlayer.Character:GetPivot()
-	
+
 	local dir = {w = false, a = false, s = false, d = false, q = false, e = false}
-	
+
 	local function GetDirection()
 		local x, y, z = 0, 0, 0
 		local Speed = self.Config.Speed
@@ -82,8 +82,8 @@ function Main:EnableFly()
 
 	self.Connections["CharacterRemoving"] = Player.CharacterRemoving:Connect(function()
 		self.OldAnchored = nil
-	)
-	
+	end)
+
 	self.Connections["Move"] = RunService.Heartbeat:Connect(function()
 		Player.Character.Humanoid.PlatformStand = true
 		self.OldAnchored = Player.Character.PrimaryPart.Anchored
@@ -118,7 +118,7 @@ function Main:DisableFly()
 
 	self.Connections["CharacterRemoving"]:Disconnect()
 	self.Connections["CharacterRemoving"] = nil
-	
+
 	Player.Character.Humanoid.PlatformStand = false
 
 	if self.OldAnchored then
