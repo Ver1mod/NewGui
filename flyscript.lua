@@ -80,10 +80,6 @@ function Main:EnableFly()
 		Direction = GetDirection()
 	end)
 
-	self.Connections["CharacterRemoving"] = Player.CharacterRemoving:Connect(function()
-		self.OldAnchored = nil
-	end)
-
 	self.Connections["Move"] = RunService.Heartbeat:Connect(function()
 		Player.Character.Humanoid.PlatformStand = true
 		self.OldAnchored = Player.Character.PrimaryPart.Anchored
@@ -116,14 +112,8 @@ function Main:DisableFly()
 	self.Connections["InputEnded"]:Disconnect()
 	self.Connections["InputEnded"] = nil
 
-	self.Connections["CharacterRemoving"]:Disconnect()
-	self.Connections["CharacterRemoving"] = nil
-
 	Player.Character.Humanoid.PlatformStand = false
-
-	if self.OldAnchored then
-		Player.Character.PrimaryPart.Anchored = self.OldAnchored
-	end
+	Player.Character.PrimaryPart.Anchored = self.OldAnchored
 end
 
 local Toggle = example:AddToggle("Fly", function(State: boolean)
