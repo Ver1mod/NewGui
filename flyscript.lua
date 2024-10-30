@@ -116,9 +116,6 @@ function Main:DisableFly()
 	self.Connections["InputEnded"]:Disconnect()
 	self.Connections["InputEnded"] = nil
 
-	self.Connections["CharacterRemoving"]:Disconnect()
-	self.Connections["CharacterRemoving"] = nil
-
 	Player.Character.Humanoid.PlatformStand = false
 
 	if self.OldAnchored ~= nil then
