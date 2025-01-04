@@ -1,0 +1,242 @@
+local Player = game:GetService("Players").LocalPlayer
+local NPCs = workspace.NPCs
+local Remotes = game:GetService("ReplicatedStorage").Remotes
+local ContextActionService = game:GetService("ContextActionService")
+local SuperMelee = {}
+SuperMelee.__index = SuperMelee
+SuperMelee.Delay = 0
+SuperMelee.WaitIndex = 1
+local test = {}
+test.__index = test
+_G.SuperMelee = SuperMelee
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Ver1mod/NewGui/main/UI_Library.lua", true))()
+local example = library.new("The yellow oil rig")
+_G.example = example
+local function MergeTables(...)
+	local List = {}
+	for _, v: table in {...} do
+		for _, v in v do
+			table.insert(List, v)
+		end
+	end
+	return List
+end
+
+example:AddBox("Delay", function(object, focus)
+	if focus then
+		local target = loadstring("return " .. object.Text)()
+		SuperMelee.Delay = target
+	end
+end)
+
+example:AddBox("Wait index", function(object, focus)
+	if focus then
+		SuperMelee.WaitIndex = tonumber(object.Text)
+	end
+end)
+example:AddToggle("Target bosses", function(state)
+	SuperMelee.TargetBosses = state
+end)
+example:AddToggle("Enable backpack", function(state)
+	SuperMelee.BackpackTanz = true
+	while SuperMelee.BackpackTanz do
+		Player.Backpack:WaitForChild("Tanzanite Axe").Parent = Player.Character
+		task.wait()
+	end
+end)
+example:AddToggle("Activate melee", function(state)
+	SuperMelee.Active = state
+	if SuperMelee.Active then
+		local i = 1
+		local enemies = MergeTables(
+			NPCs.Monsters:GetChildren(), 
+			NPCs.Tango:GetChildren()
+		)
+	
+		SuperMelee.Connections = {}
+	
+		SuperMelee.Connections[1] = NPCs.Monsters.ChildAdded:Connect(function(child)
+			table.insert(enemies, child)
+		end)
+		SuperMelee.Connections[2] = NPCs.Tango.ChildAdded:Connect(function(child)
+			table.insert(enemies, child)
+		end)
+		SuperMelee.Connections[3] = NPCs.Monsters.ChildRemoved:Connect(function(child)
+			local target = table.find(enemies, child)
+			if target <= i then
+				i -= 1
+			end
+			table.remove(enemies, target)
+		end)
+		SuperMelee.Connections[4] = NPCs.Tango.ChildRemoved:Connect(function(child)
+			local target = table.find(enemies, child)
+			if target <= i then
+				i -= 1
+			end
+			table.remove(enemies, target)
+		end)
+		while SuperMelee.Active and task.wait(SuperMelee.Delay) do
+			if enemies[1] == nil or not Player.Character:FindFirstChildOfClass("Tool") then
+				continue
+			elseif enemies[i] == nil then
+				i = 1
+			end
+			local args = {}
+			local Bosses = Player.PlayerGui.GameMain2.Topbar.ListBoss.Templates
+			for EnemyIndex = 0, 2 do
+				local enemy = enemies[i+EnemyIndex]
+				if enemy and not enemy:GetAttribute("ImmortalWishSpawn") and not enemy:GetAttribute("Protector") and not enemy:GetAttribute("OnVehicle") and (not SuperMelee.TargetBosses or Bosses:FindFirstChild(enemy.Name) or enemy.Name == "Kraken") then
+					table.insert(args, enemies[i+EnemyIndex])
+				end
+			end
+			local Weapon = Player.Character:FindFirstChildOfClass("Tool")
+			if Weapon and Weapon:GetAttribute("IsMelee") and #args > 0 then
+				for i = 1, SuperMelee.WaitIndex do
+					Weapon.Main:FireServer("SWING", args)
+					Weapon.Main:FireServer("DAMAGE", args)
+				end
+			end
+			
+			i += 1
+		end
+		
+		for _, v in SuperMelee.Connections do
+			v:Disconnect()
+		end
+	end
+end)
+
+example:AddToggle("Auto kill choosen", function(state)
+	SuperMelee.ActiveSingle = state
+	while SuperMelee.ActiveSingle and task.wait(SuperMelee.Delay) do
+		pcall(function()
+			local Weapon = Player.Character:FindFirstChildOfClass("Tool")
+			local WaitIndex = 1
+			while test.part and test.part:IsDescendantOf(game) and test.part.Humanoid.Health > 0 and SuperMelee.ActiveSingle and Weapon do
+				if Weapon:GetAttribute("IsMelee") then
+					for i = 1, SuperMelee.WaitIndex do
+						Weapon.Main:FireServer("SWING", {test.part, test.part, test.part})
+						Weapon.Main:FireServer("DAMAGE", {test.part, test.part, test.part})
+					end
+				end
+				task.wait(SuperMelee.Delay)
+			end
+		end)
+	end
+end)
+
+function test:create_highlight()
+	local function SetUp()
+		self.HighlightInstance = Instance.new("Highlight")
+		self.HighlightInstance.Name = "TestHighlight"
+		self.HighlightInstance.Parent = self.part
+		self.HighlightInstance.FillTransparency = 0.6
+		self.HighlightInstance.FillColor = Color3.fromRGB(8, 136, 255)
+	end
+	if self.HighlightInstance then
+		if self.HighlightInstance.Parent ~= self.part then
+			self.HighlightInstance:Destroy()
+			SetUp()
+		else
+			self.HighlightInstance:Destroy()
+			self.part = nil
+		end
+	else
+		SetUp()
+	end 
+end
+
+function test.getPart()
+	-- Player
+	local mouse = Player:GetMouse()
+
+	-- Detect part
+	local UserInputService = game:GetService("UserInputService")
+	local MAX_MOUSE_DISTANCE = 2400
+
+	local mouseLocation = UserInputService:GetMouseLocation()
+
+	-- Create a ray from the 2D mouseLocation
+	local screenToWorldRay = workspace.CurrentCamera:ViewportPointToRay(mouseLocation.X, mouseLocation.Y)
+
+	-- The unit direction vector of the ray multiplied by a maximum distance
+	local directionVector = screenToWorldRay.Direction * MAX_MOUSE_DISTANCE
+
+	-- Raycast from the ray's origin towards its direction
+	local raycastResult = workspace:Raycast(screenToWorldRay.Origin, directionVector)
+
+	if raycastResult then
+		return raycastResult.Instance
+	end
+end
+
+function test:SelectTarget()
+	self.part = self.getPart()
+	if self.part and self.part:IsDescendantOf(NPCs) then
+		while self.part.Parent.Parent ~= NPCs do
+			self.part = self.part.Parent
+		end
+		test:create_highlight()
+	end
+end
+
+test.KeyCode = Enum.KeyCode.B
+example:AddBox("Key", function(object, focus)
+	if focus then
+		test.KeyCode = Enum.KeyCode.B
+		pcall(function()
+			test.KeyCode = Enum.KeyCode[string.upper(object.Text)]
+		end)
+		ContextActionService:UnbindAction("SelectedPart")
+		test.BindAction()
+	end
+end)
+
+test.SetTargetWindow = example:AddBox("Set target", function(object, focus)
+	if focus then
+		local target = loadstring("return " .. object.Text)()
+		if target then
+			test.part = target
+			test.SetTargetWindow.Text = "Done"
+			task.wait(5)
+			test.SetTargetWindow.Text = "Set target"
+		else
+			test.SetTargetWindow.Text = "NOT FOUND!"
+			task.wait(5)
+			test.SetTargetWindow.Text = "Set target"
+		end
+	end
+end)
+
+function test.BindAction()
+	local function handleAction(actionName, inputState, inputObject)
+		if actionName == "SelectedPart" then
+			if inputState == Enum.UserInputState.Begin then
+				test:SelectTarget()
+			end
+		end
+	end
+	ContextActionService:BindAction("SelectedPart", handleAction, false, test.KeyCode)
+end
+
+SuperMelee.ActiveRolling = false
+example:AddToggle("Immortality", function(state)
+	SuperMelee.ActiveRolling = state
+	while SuperMelee.ActiveRolling and task.wait() do
+		Remotes.Rolling:FireServer()
+	end
+end)
+
+example:AddToggle("Charge tanzanite axe", function(state)
+	SuperMelee.AutoTanz = state
+	while SuperMelee.AutoTanz and task.wait() and Player.Character do
+		local target = Player.Character:WaitForChild("Tanzanite Axe")
+		if not target:GetAttribute("Charged") then
+			target.Main:FireServer("CHARGE",{100})
+		end
+	end
+end)
+
+example:AddButton("Sandevistan", function()
+	Remotes.BuyWeapon:FireServer("MCD Sandevistan")
+end)
