@@ -1,0 +1,25 @@
+if _G.SuperMutant then
+    if _G.SuperMutant.CharacterAdded then
+        _G.SuperMutant.CharacterAdded:Disconnect()
+    end
+    if _G.SuperMutant.CharacterRemoving then
+        _G.SuperMutant.CharacterRemoving:Disconnect()
+    end
+end
+
+local Change = game:GetService("ReplicatedStorage").Customization.Change
+local Player = game.Players.LocalPlayer
+
+_G.SuperMutant = {}
+_G.SuperMutant.__index = _G.SuperMutant
+_G.SuperMutant.TargetCharacter = "Scout"
+
+_G.SuperMutant.CharacterAdded = Player.CharacterAdded:Connect(function()
+    Change:InvokeServer("Outfits", _G.SuperMutant.TargetCharacter)
+    task.wait(1.5)
+    Change:InvokeServer("Outfits", "Frostkill")
+end)
+
+_G.SuperMutant.CharacterRemoving = Player.CharacterRemoving:Connect(function()
+    Change:InvokeServer("Outfits", "Frostkill")  
+end)
