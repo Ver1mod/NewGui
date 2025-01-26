@@ -12,7 +12,7 @@ local Player = game.Players.LocalPlayer
 
 _G.SuperMutant = {}
 _G.SuperMutant.__index = _G.SuperMutant
-_G.SuperMutant.TargetCharacter = "Scout"
+_G.SuperMutant.TargetCharacter = "Anarchist"
 
 _G.SuperMutant.CharacterAdded = Player.CharacterAdded:Connect(function()
     Change:InvokeServer("Outfits", _G.SuperMutant.TargetCharacter)
