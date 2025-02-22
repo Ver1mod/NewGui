@@ -47,8 +47,8 @@ function Main:EnableFly()
 			    z /= math.sqrt(2)
             end
 		elseif y ~= 0 and z ~= 0 then
-            y /= math.sqrt(3)
-			z /= math.sqrt(3)
+            y /= math.sqrt(2)
+			z /= math.sqrt(2)
         end
 		return CFrame.new(x,y,z)
 	end
