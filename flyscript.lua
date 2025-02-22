@@ -34,10 +34,22 @@ function Main:EnableFly()
 		if dir.e then y += 1 * Speed end
 		if dir.q then y += -1 * Speed end
 
-		if x ~= 0 and z ~= 0 then
-			x /= 2
-			z /= 2
-		end
+		if x ~= 0 then
+			if z ~= 0 and y ~= 0 then
+                x /= math.sqrt(3)
+                y /= math.sqrt(3)
+			    z /= math.sqrt(3)
+            elseif y ~= 0 then
+                x /= math.sqrt(2)
+			    y /= math.sqrt(2)
+            elseif z ~= 0 then
+                x /= math.sqrt(2)
+			    z /= math.sqrt(2)
+            end
+		elseif y ~= 0 and z ~= 0 then
+            y /= math.sqrt(3)
+			z /= math.sqrt(3)
+        end
 		return CFrame.new(x,y,z)
 	end
 	local Direction = CFrame.new()
