@@ -19,7 +19,7 @@ local function merge_tables(arg, value0)
 end
 
 -- The start
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Ver1mod/NewGui/Ver1mod-patch-1/UI_Library.lua", true))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Ver1mod/NewGui/main/UI_Library.lua", true))()
 local example = library.new("The red lake")
 local example0 = library.new("Items")
 
